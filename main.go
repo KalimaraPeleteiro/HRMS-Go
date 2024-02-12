@@ -124,7 +124,7 @@ func main() {
 		update := bson.D{
 			{Key: "$set", Value: bson.D{
 				{Key: "name", Value: employee.Name},
-				{Key: "age", Value: employee.Salary},
+				{Key: "age", Value: employee.Age},
 				{Key: "salary", Value: employee.Salary},
 			}},
 		}
