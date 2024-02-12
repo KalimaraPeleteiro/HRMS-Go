@@ -103,19 +103,22 @@ func main() {
 	})
 
 	app.Put("/employee/:id", func(c *fiber.Ctx) error {
+
+		// Coletando parâmetro de busca
 		id := c.Params("id")
 		employeeID, err := primitive.ObjectIDFromHex(id)
-
 		if err != nil {
 			return c.Status(400).SendString(err.Error())
 		}
 
+		// Coletando o JSON da requisição
 		employee := new(Employee)
 
 		if err := c.BodyParser(employee); err != nil {
 			return c.Status(400).SendString(err.Error())
 		}
 
+		// Buscando e atualizando em banco
 		query := bson.D{{Key: "_id", Value: employeeID}}
 
 		update := bson.D{
@@ -134,8 +137,29 @@ func main() {
 			return c.Status(500).SendString(err.Error())
 		}
 
+		// Retonrnando o resultado
 		employee.ID = id
 		return c.Status(200).JSON(employee)
+	})
+
+	app.Delete("employee/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		employeeID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+
+		query := bson.D{{Key: "_id", Value: employeeID}}
+		result, err := mg.Database.Collection("employees").DeleteOne(c.Context(), &query)
+		if err != nil {
+			return c.Status(500).SendString(err.Error())
+		}
+
+		if result.DeletedCount < 1 {
+			return c.Status(404).JSON("No users found.")
+		}
+
+		return c.Status(200).JSON("Record deleted.")
 	})
 
 	log.Fatal(app.Listen(":3000"))
