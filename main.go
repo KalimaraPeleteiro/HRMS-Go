@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,9 +18,9 @@ type MongoInstance struct {
 
 type Employee struct {
 	ID     string  `json:"id,omitempty" bson:"_id,omitempty"`
-	Name   string  `json:"nome"`
-	Salary float64 `json:"salario"`
-	Age    float64 `json:"idade"`
+	Name   string  `json:"name"`
+	Salary float64 `json:"salary"`
+	Age    float64 `json:"age"`
 }
 
 var mg MongoInstance
@@ -100,4 +101,42 @@ func main() {
 
 		return c.Status(201).JSON(createdEmployee)
 	})
+
+	app.Put("/employee/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		employeeID, err := primitive.ObjectIDFromHex(id)
+
+		if err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+
+		employee := new(Employee)
+
+		if err := c.BodyParser(employee); err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+
+		query := bson.D{{Key: "_id", Value: employeeID}}
+
+		update := bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "name", Value: employee.Name},
+				{Key: "age", Value: employee.Salary},
+				{Key: "salary", Value: employee.Salary},
+			}},
+		}
+
+		err = mg.Database.Collection("employees").FindOneAndUpdate(c.Context(), query, update).Err()
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return c.Status(400).SendString(err.Error())
+			}
+			return c.Status(500).SendString(err.Error())
+		}
+
+		employee.ID = id
+		return c.Status(200).JSON(employee)
+	})
+
+	log.Fatal(app.Listen(":3000"))
 }
