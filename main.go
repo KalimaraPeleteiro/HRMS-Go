@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,17 +27,14 @@ type Employee struct {
 }
 
 func connect() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	clientOptions := options.Client().ApplyURI(mongoURI)
 
-	defer cancel()
-
-	err = client.Connect(ctx)
-	db := client.Database(databaseName)
-
+	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		return err
 	}
+
+	db := client.Database(databaseName)
 
 	mg = MongoInstance{
 		Client:   client,
